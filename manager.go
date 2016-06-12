@@ -7,11 +7,7 @@ func add(l *Logger) {
 	logMap[l.name] = l
 }
 
-func SetLevelByString(name string, level string) {
-	l, ok := logMap[name]
-	if !ok {
-		return
-	}
+func rawSetLevel(l *Logger, level string) {
 
 	switch level {
 	case "debug":
@@ -24,6 +20,25 @@ func SetLevelByString(name string, level string) {
 		l.level = LEVEL_ERROR
 	case "fatal":
 		l.level = LEVEL_FATAL
+	}
+}
+
+func SetLevelByString(name string, level string) {
+
+	if name == "all" {
+
+		for _, l := range logMap {
+			rawSetLevel(l, level)
+		}
+
+	} else {
+		l, ok := logMap[name]
+		if !ok {
+			return
+		}
+
+		rawSetLevel(l, level)
+
 	}
 
 }
