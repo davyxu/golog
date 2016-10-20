@@ -7,28 +7,30 @@ func add(l *Logger) {
 	logMap[l.name] = l
 }
 
-func rawSetLevel(l *Logger, level string) {
+func str2loglevel(level string) int {
 
 	switch level {
 	case "debug":
-		l.level = LEVEL_DEBUG
+		return LEVEL_DEBUG
 	case "info":
-		l.level = LEVEL_INFO
+		return LEVEL_INFO
 	case "warn":
-		l.level = LEVEL_WARN
+		return LEVEL_WARN
 	case "error":
-		l.level = LEVEL_ERROR
+		return LEVEL_ERROR
 	case "fatal":
-		l.level = LEVEL_FATAL
+		return LEVEL_FATAL
 	}
+
+	return LEVEL_DEBUG
 }
 
-func SetLevelByString(name string, level string) {
+func selectLogger(name string, callback func(*Logger)) {
 
 	if name == "all" {
 
 		for _, l := range logMap {
-			rawSetLevel(l, level)
+			callback(l)
 		}
 
 	} else {
@@ -37,8 +39,24 @@ func SetLevelByString(name string, level string) {
 			return
 		}
 
-		rawSetLevel(l, level)
+		callback(l)
 
 	}
+}
 
+// 通过字符串设置某一类日志的级别
+func SetLevelByString(name string, level string) {
+
+	selectLogger(name, func(l *Logger) {
+		l.level = str2loglevel(level)
+	})
+
+}
+
+// 通过字符串设置某一类日志的崩溃级别
+func SetPanicLevelByString(name string, level string) {
+
+	selectLogger(name, func(l *Logger) {
+		l.panicLevel = str2loglevel(level)
+	})
 }

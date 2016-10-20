@@ -57,12 +57,13 @@ var levelString = [...]string{
 // the Writer's Write method.  A Logger can be used simultaneously from
 // multiple goroutines; it guarantees to serialize access to the Writer.
 type Logger struct {
-	mu    sync.Mutex // ensures atomic writes; protects the following fields
-	flag  int        // properties
-	out   io.Writer  // destination for output
-	buf   []byte     // for accumulating text to write
-	level int
-	name  string
+	mu         sync.Mutex // ensures atomic writes; protects the following fields
+	flag       int        // properties
+	out        io.Writer  // destination for output
+	buf        []byte     // for accumulating text to write
+	level      int
+	panicLevel int
+	name       string
 }
 
 // New creates a new Logger.   The out variable sets the
@@ -71,7 +72,7 @@ type Logger struct {
 // The flag argument defines the logging properties.
 
 func New(name string) *Logger {
-	l := &Logger{out: os.Stderr, flag: LstdFlags, level: LEVEL_DEBUG, name: name}
+	l := &Logger{out: os.Stderr, flag: LstdFlags, level: LEVEL_DEBUG, name: name, panicLevel: LEVEL_FATAL}
 
 	add(l)
 
@@ -184,10 +185,18 @@ func (self *Logger) log(level int, format string, v ...interface{}) {
 
 	prefix := fmt.Sprintf("%s %s", levelString[level], self.name)
 
+	var text string
+
 	if format == "" {
-		self.Output(3, prefix, fmt.Sprintln(v...))
+		text = fmt.Sprintln(v...)
 	} else {
-		self.Output(3, prefix, fmt.Sprintf(format, v...))
+		text = fmt.Sprintf(format, v...)
+	}
+
+	self.Output(3, prefix, text)
+
+	if level >= self.panicLevel {
+		panic(text)
 	}
 
 }
