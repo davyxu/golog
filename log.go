@@ -59,7 +59,6 @@ var levelString = [...]string{
 type Logger struct {
 	mu         sync.Mutex // ensures atomic writes; protects the following fields
 	flag       int        // properties
-	out        io.Writer  // destination for output
 	buf        []byte     // for accumulating text to write
 	level      int
 	panicLevel int
@@ -72,7 +71,7 @@ type Logger struct {
 // The flag argument defines the logging properties.
 
 func New(name string) *Logger {
-	l := &Logger{out: os.Stderr, flag: LstdFlags, level: LEVEL_DEBUG, name: name, panicLevel: LEVEL_FATAL}
+	l := &Logger{flag: LstdFlags, level: LEVEL_DEBUG, name: name, panicLevel: LEVEL_FATAL}
 
 	add(l)
 
@@ -150,7 +149,7 @@ func (self *Logger) formatHeader(buf *[]byte, t time.Time, file string, line int
 // already a newline.  Calldepth is used to recover the PC and is
 // provided for generality, although at the moment on all pre-defined
 // paths it will be 2.
-func (self *Logger) Output(calldepth int, prefix string, s string) error {
+func (self *Logger) Output(calldepth int, prefix string, s string, out io.Writer) error {
 	now := time.Now() // get this early.
 	var file string
 	var line int
@@ -173,7 +172,7 @@ func (self *Logger) Output(calldepth int, prefix string, s string) error {
 	if len(s) > 0 && s[len(s)-1] != '\n' {
 		self.buf = append(self.buf, '\n')
 	}
-	_, err := self.out.Write(self.buf)
+	_, err := out.Write(self.buf)
 	return err
 }
 
@@ -193,7 +192,14 @@ func (self *Logger) log(level int, format string, v ...interface{}) {
 		text = fmt.Sprintf(format, v...)
 	}
 
-	self.Output(3, prefix, text)
+	var out io.Writer
+	if level >= LEVEL_ERROR {
+		out = os.Stderr
+	} else {
+		out = os.Stdout
+	}
+
+	self.Output(3, prefix, text, out)
 
 	if level >= self.panicLevel {
 		panic(text)
