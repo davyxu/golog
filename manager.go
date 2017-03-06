@@ -48,7 +48,7 @@ func selectLogger(name string, callback func(*Logger)) {
 func SetLevelByString(name string, level string) {
 
 	selectLogger(name, func(l *Logger) {
-		l.level = str2loglevel(level)
+		l.SetLevelByString(level)
 	})
 
 }
@@ -57,6 +57,6 @@ func SetLevelByString(name string, level string) {
 func SetPanicLevelByString(name string, level string) {
 
 	selectLogger(name, func(l *Logger) {
-		l.panicLevel = str2loglevel(level)
+		l.SetPanicLevelByString(level)
 	})
 }

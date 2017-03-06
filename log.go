@@ -251,3 +251,13 @@ func (self *Logger) Fatalf(format string, v ...interface{}) {
 func (self *Logger) Fatalln(v ...interface{}) {
 	self.log(LEVEL_FATAL, "", v...)
 }
+
+func (self *Logger) SetLevelByString(level string) {
+	self.level = str2loglevel(level)
+
+}
+
+func (self *Logger) SetPanicLevelByString(level string) {
+	self.panicLevel = str2loglevel(level)
+
+}
