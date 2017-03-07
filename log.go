@@ -36,22 +36,6 @@ const (
 
 )
 
-const (
-	LEVEL_DEBUG = iota
-	LEVEL_INFO
-	LEVEL_WARN
-	LEVEL_ERROR
-	LEVEL_FATAL
-)
-
-var levelString = [...]string{
-	"[DEBUG]",
-	"[INFO]",
-	"[WARN]",
-	"[ERROR]",
-	"[FATAL]",
-}
-
 // A Logger represents an active logging object that generates lines of
 // output to an io.Writer.  Each logging operation makes a single call to
 // the Writer's Write method.  A Logger can be used simultaneously from
@@ -60,9 +44,10 @@ type Logger struct {
 	mu         sync.Mutex // ensures atomic writes; protects the following fields
 	flag       int        // properties
 	buf        []byte     // for accumulating text to write
-	level      int
-	panicLevel int
+	level      Level
+	panicLevel Level
 	name       string
+	colorFile  *ColorFile
 }
 
 // New creates a new Logger.   The out variable sets the
@@ -71,7 +56,7 @@ type Logger struct {
 // The flag argument defines the logging properties.
 
 func New(name string) *Logger {
-	l := &Logger{flag: LstdFlags, level: LEVEL_DEBUG, name: name, panicLevel: LEVEL_FATAL}
+	l := &Logger{flag: LstdFlags, level: Level_Debug, name: name, panicLevel: Level_Fatal}
 
 	add(l)
 
@@ -98,8 +83,8 @@ func itoa(buf *[]byte, i int, wid int) {
 	*buf = append(*buf, b[bp:]...)
 }
 
-func (self *Logger) formatHeader(buf *[]byte, t time.Time, file string, line int, prefix string) {
-	*buf = append(*buf, prefix...)
+func (self *Logger) formatHeader(buf *[]byte, t time.Time, file string, line int) {
+
 	*buf = append(*buf, ' ')
 	if self.flag&(Ldate|Ltime|Lmicroseconds) != 0 {
 		if self.flag&Ldate != 0 {
@@ -149,14 +134,14 @@ func (self *Logger) formatHeader(buf *[]byte, t time.Time, file string, line int
 // already a newline.  Calldepth is used to recover the PC and is
 // provided for generality, although at the moment on all pre-defined
 // paths it will be 2.
-func (self *Logger) Output(calldepth int, prefix string, s string, out io.Writer) error {
+func (self *Logger) Output(calldepth int, prefix string, text string, c Color, out io.Writer) error {
 	now := time.Now() // get this early.
 	var file string
 	var line int
 	self.mu.Lock()
 	defer self.mu.Unlock()
 	if self.flag&(Lshortfile|Llongfile) != 0 {
-		// release lock while getting caller info - it's expensive.
+		// release lock while getting caller info - it'text expensive.
 		self.mu.Unlock()
 		var ok bool
 		_, file, line, ok = runtime.Caller(calldepth)
@@ -167,16 +152,31 @@ func (self *Logger) Output(calldepth int, prefix string, s string, out io.Writer
 		self.mu.Lock()
 	}
 	self.buf = self.buf[:0]
-	self.formatHeader(&self.buf, now, file, line, prefix)
-	self.buf = append(self.buf, s...)
-	if len(s) > 0 && s[len(s)-1] != '\n' {
+
+	colorLog := self.colorFile != nil && c != Color_None
+
+	if colorLog {
+		self.buf = append(self.buf, logColorPrefix[c]...)
+	}
+
+	self.buf = append(self.buf, prefix...)
+	self.formatHeader(&self.buf, now, file, line)
+	self.buf = append(self.buf, text...)
+
+	if colorLog {
+		self.buf = append(self.buf, logColorSuffix...)
+	}
+
+	if len(text) > 0 && text[len(text)-1] != '\n' {
 		self.buf = append(self.buf, '\n')
 	}
-	_, err := out.Write(self.buf)
-	return err
+
+	fmt.Printf("%s", string(self.buf))
+	//_, err := out.Write(self.buf)
+	return nil
 }
 
-func (self *Logger) log(level int, format string, v ...interface{}) {
+func (self *Logger) log(level Level, format string, v ...interface{}) {
 
 	if level < self.level {
 		return
@@ -186,6 +186,8 @@ func (self *Logger) log(level int, format string, v ...interface{}) {
 
 	var text string
 
+	c := colorFromLevel(level)
+
 	if format == "" {
 		text = fmt.Sprintln(v...)
 	} else {
@@ -193,15 +195,19 @@ func (self *Logger) log(level int, format string, v ...interface{}) {
 	}
 
 	var out io.Writer
-	if level >= LEVEL_ERROR {
+	if level >= Level_Error {
 		out = os.Stderr
 	} else {
 		out = os.Stdout
 	}
 
-	self.Output(3, prefix, text, out)
+	if self.colorFile != nil && c == Color_None {
+		c = self.colorFile.ColorFromText(text)
+	}
 
-	if level >= self.panicLevel {
+	self.Output(3, prefix, text, c, out)
+
+	if int(level) >= int(self.panicLevel) {
 		panic(text)
 	}
 
@@ -209,47 +215,47 @@ func (self *Logger) log(level int, format string, v ...interface{}) {
 
 func (self *Logger) Debugf(format string, v ...interface{}) {
 
-	self.log(LEVEL_DEBUG, format, v...)
+	self.log(Level_Debug, format, v...)
 }
 
 func (self *Logger) Debugln(v ...interface{}) {
-	self.log(LEVEL_DEBUG, "", v...)
+	self.log(Level_Debug, "", v...)
 }
 
 func (self *Logger) Infof(format string, v ...interface{}) {
 
-	self.log(LEVEL_INFO, format, v...)
+	self.log(Level_Info, format, v...)
 }
 
 func (self *Logger) Infoln(v ...interface{}) {
-	self.log(LEVEL_INFO, "", v...)
+	self.log(Level_Info, "", v...)
 }
 
 func (self *Logger) Warnf(format string, v ...interface{}) {
 
-	self.log(LEVEL_WARN, format, v...)
+	self.log(Level_Warn, format, v...)
 }
 
 func (self *Logger) Warnln(v ...interface{}) {
-	self.log(LEVEL_WARN, "", v...)
+	self.log(Level_Warn, "", v...)
 }
 
 func (self *Logger) Errorf(format string, v ...interface{}) {
 
-	self.log(LEVEL_ERROR, format, v...)
+	self.log(Level_Warn, format, v...)
 }
 
 func (self *Logger) Errorln(v ...interface{}) {
-	self.log(LEVEL_ERROR, "", v...)
+	self.log(Level_Error, "", v...)
 }
 
 func (self *Logger) Fatalf(format string, v ...interface{}) {
 
-	self.log(LEVEL_FATAL, format, v...)
+	self.log(Level_Fatal, format, v...)
 }
 
 func (self *Logger) Fatalln(v ...interface{}) {
-	self.log(LEVEL_FATAL, "", v...)
+	self.log(Level_Fatal, "", v...)
 }
 
 func (self *Logger) SetLevelByString(level string) {
@@ -260,4 +266,8 @@ func (self *Logger) SetLevelByString(level string) {
 func (self *Logger) SetPanicLevelByString(level string) {
 	self.panicLevel = str2loglevel(level)
 
+}
+
+func (self *Logger) SetColorFile(file *ColorFile) {
+	self.colorFile = file
 }

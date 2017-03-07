@@ -7,27 +7,27 @@ func add(l *Logger) {
 	logMap[l.name] = l
 }
 
-func str2loglevel(level string) int {
+func str2loglevel(level string) Level {
 
 	switch level {
 	case "debug":
-		return LEVEL_DEBUG
+		return Level_Debug
 	case "info":
-		return LEVEL_INFO
+		return Level_Info
 	case "warn":
-		return LEVEL_WARN
+		return Level_Warn
 	case "error":
-		return LEVEL_ERROR
+		return Level_Error
 	case "fatal":
-		return LEVEL_FATAL
+		return Level_Fatal
 	}
 
-	return LEVEL_DEBUG
+	return Level_Debug
 }
 
 func selectLogger(name string, callback func(*Logger)) {
 
-	if name == "all" {
+	if name == "*" {
 
 		for _, l := range logMap {
 			callback(l)
@@ -45,18 +45,31 @@ func selectLogger(name string, callback func(*Logger)) {
 }
 
 // 通过字符串设置某一类日志的级别
-func SetLevelByString(name string, level string) {
+func SetLevelByString(loggerName string, level string) {
 
-	selectLogger(name, func(l *Logger) {
+	selectLogger(loggerName, func(l *Logger) {
 		l.SetLevelByString(level)
 	})
 
 }
 
 // 通过字符串设置某一类日志的崩溃级别
-func SetPanicLevelByString(name string, level string) {
+func SetPanicLevelByString(loggerName string, level string) {
 
-	selectLogger(name, func(l *Logger) {
+	selectLogger(loggerName, func(l *Logger) {
 		l.SetPanicLevelByString(level)
+	})
+}
+
+func SetColorFile(loggerName string, colorFileName string) {
+
+	cf := NewColorFile()
+
+	if err := cf.Load(colorFileName); err != nil {
+		panic(err)
+	}
+
+	selectLogger(loggerName, func(l *Logger) {
+		l.SetColorFile(cf)
 	})
 }
