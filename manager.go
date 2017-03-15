@@ -1,5 +1,7 @@
 package golog
 
+import "os"
+
 var logMap = make(map[string]*Logger)
 
 func add(l *Logger) {
@@ -25,12 +27,14 @@ func str2loglevel(level string) Level {
 	return Level_Debug
 }
 
-func selectLogger(name string, callback func(*Logger)) {
+func VisitLogger(name string, callback func(*Logger) bool) {
 
 	if name == "*" {
 
 		for _, l := range logMap {
-			callback(l)
+			if !callback(l) {
+				break
+			}
 		}
 
 	} else {
@@ -39,7 +43,9 @@ func selectLogger(name string, callback func(*Logger)) {
 			return
 		}
 
-		callback(l)
+		if callback(l) {
+			return
+		}
 
 	}
 }
@@ -47,8 +53,9 @@ func selectLogger(name string, callback func(*Logger)) {
 // 通过字符串设置某一类日志的级别
 func SetLevelByString(loggerName string, level string) {
 
-	selectLogger(loggerName, func(l *Logger) {
+	VisitLogger(loggerName, func(l *Logger) bool {
 		l.SetLevelByString(level)
+		return true
 	})
 
 }
@@ -56,8 +63,9 @@ func SetLevelByString(loggerName string, level string) {
 // 通过字符串设置某一类日志的崩溃级别
 func SetPanicLevelByString(loggerName string, level string) {
 
-	selectLogger(loggerName, func(l *Logger) {
+	VisitLogger(loggerName, func(l *Logger) bool {
 		l.SetPanicLevelByString(level)
+		return true
 	})
 }
 
@@ -69,7 +77,23 @@ func SetColorFile(loggerName string, colorFileName string) {
 		panic(err)
 	}
 
-	selectLogger(loggerName, func(l *Logger) {
+	VisitLogger(loggerName, func(l *Logger) bool {
 		l.SetColorFile(cf)
+		return true
+	})
+}
+
+func SetOutputLogger(loggerName string, filename string) {
+
+	mode := os.O_RDWR | os.O_CREATE | os.O_APPEND
+
+	f, err := os.OpenFile(filename, mode, 0666)
+	if err != nil {
+		panic(err)
+	}
+
+	VisitLogger(loggerName, func(l *Logger) bool {
+		l.fileOutput = f
+		return true
 	})
 }

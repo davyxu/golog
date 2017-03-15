@@ -48,6 +48,8 @@ type Logger struct {
 	panicLevel Level
 	name       string
 	colorFile  *ColorFile
+
+	fileOutput *os.File
 }
 
 // New creates a new Logger.   The out variable sets the
@@ -171,9 +173,9 @@ func (self *Logger) Output(calldepth int, prefix string, text string, c Color, o
 		self.buf = append(self.buf, '\n')
 	}
 
-	fmt.Printf("%s", string(self.buf))
-	//_, err := out.Write(self.buf)
-	return nil
+	_, err := out.Write(self.buf)
+
+	return err
 }
 
 func (self *Logger) log(level Level, format string, v ...interface{}) {
@@ -195,10 +197,16 @@ func (self *Logger) log(level Level, format string, v ...interface{}) {
 	}
 
 	var out io.Writer
-	if level >= Level_Error {
-		out = os.Stderr
+
+	if self.fileOutput == nil {
+
+		if level >= Level_Error {
+			out = os.Stderr
+		} else {
+			out = os.Stdout
+		}
 	} else {
-		out = os.Stdout
+		out = self.fileOutput
 	}
 
 	if self.colorFile != nil && c == Color_None {
@@ -259,6 +267,7 @@ func (self *Logger) Fatalln(v ...interface{}) {
 }
 
 func (self *Logger) SetLevelByString(level string) {
+
 	self.level = str2loglevel(level)
 
 }
