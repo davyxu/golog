@@ -280,3 +280,6 @@ func (self *Logger) SetPanicLevelByString(level string) {
 func (self *Logger) SetColorFile(file *ColorFile) {
 	self.colorFile = file
 }
+func (self *Logger) IsDebugEnabled() bool {
+	return self.level == Level_Debug
+}
