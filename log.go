@@ -178,7 +178,7 @@ func (self *Logger) Output(calldepth int, prefix string, text string, c Color, o
 	return err
 }
 
-func (self *Logger) log(level Level, format string, v ...interface{}) {
+func (self *Logger) log(c Color, level Level, format string, v ...interface{}) {
 
 	if level < self.level {
 		return
@@ -187,8 +187,6 @@ func (self *Logger) log(level Level, format string, v ...interface{}) {
 	prefix := fmt.Sprintf("%s %s", levelString[level], self.name)
 
 	var text string
-
-	c := colorFromLevel(level)
 
 	if format == "" {
 		text = fmt.Sprintln(v...)
@@ -221,49 +219,58 @@ func (self *Logger) log(level Level, format string, v ...interface{}) {
 
 }
 
+func (self *Logger) DebugColorf(c Color, format string, v ...interface{}) {
+
+	self.log(c, Level_Debug, format, v...)
+}
+
+func (self *Logger) DebugColorln(c Color, v ...interface{}) {
+	self.log(c, Level_Debug, "", v...)
+}
+
 func (self *Logger) Debugf(format string, v ...interface{}) {
 
-	self.log(Level_Debug, format, v...)
+	self.log(Color_None, Level_Debug, format, v...)
 }
 
 func (self *Logger) Debugln(v ...interface{}) {
-	self.log(Level_Debug, "", v...)
+	self.log(Color_None, Level_Debug, "", v...)
 }
 
 func (self *Logger) Infof(format string, v ...interface{}) {
 
-	self.log(Level_Info, format, v...)
+	self.log(Color_None, Level_Info, format, v...)
 }
 
 func (self *Logger) Infoln(v ...interface{}) {
-	self.log(Level_Info, "", v...)
+	self.log(Color_None, Level_Info, "", v...)
 }
 
 func (self *Logger) Warnf(format string, v ...interface{}) {
 
-	self.log(Level_Warn, format, v...)
+	self.log(Color_Yellow, Level_Warn, format, v...)
 }
 
 func (self *Logger) Warnln(v ...interface{}) {
-	self.log(Level_Warn, "", v...)
+	self.log(Color_Yellow, Level_Warn, "", v...)
 }
 
 func (self *Logger) Errorf(format string, v ...interface{}) {
 
-	self.log(Level_Warn, format, v...)
+	self.log(Color_Red, Level_Warn, format, v...)
 }
 
 func (self *Logger) Errorln(v ...interface{}) {
-	self.log(Level_Error, "", v...)
+	self.log(Color_Red, Level_Error, "", v...)
 }
 
 func (self *Logger) Fatalf(format string, v ...interface{}) {
 
-	self.log(Level_Fatal, format, v...)
+	self.log(Color_Red, Level_Fatal, format, v...)
 }
 
 func (self *Logger) Fatalln(v ...interface{}) {
-	self.log(Level_Fatal, "", v...)
+	self.log(Color_Red, Level_Fatal, "", v...)
 }
 
 func (self *Logger) SetLevelByString(level string) {
