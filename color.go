@@ -34,15 +34,29 @@ var logColorPrefix = []string{
 }
 
 var colorByName = map[string]Color{
-	"None":      Color_None,
-	"Black":     Color_Black,
-	"Red":       Color_Red,
-	"Green":     Color_Green,
-	"Yellow":    Color_Yellow,
-	"Blue":      Color_Blue,
-	"Purple":    Color_Purple,
-	"DarkGreen": Color_DarkGreen,
-	"White":     Color_White,
+	"none":      Color_None,
+	"black":     Color_Black,
+	"red":       Color_Red,
+	"green":     Color_Green,
+	"yellow":    Color_Yellow,
+	"blue":      Color_Blue,
+	"purple":    Color_Purple,
+	"darkgreen": Color_DarkGreen,
+	"white":     Color_White,
+}
+
+func matchColor(name string) Color {
+
+	lower := strings.ToLower(name)
+
+	for cname, c := range colorByName {
+
+		if cname == lower {
+			return c
+		}
+	}
+
+	return Color_None
 }
 
 func colorFromLevel(l Level) Color {
@@ -94,9 +108,9 @@ func (self *ColorFile) Load(filename string) error {
 
 	for _, rule := range self.Rule {
 
-		if c, ok := colorByName[rule.Color]; ok {
-			rule.c = c
-		} else {
+		rule.c = matchColor(rule.Color)
+
+		if rule.c == Color_None {
 			return fmt.Errorf("color name not exists: %s", rule.Text)
 		}
 
