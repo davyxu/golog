@@ -284,6 +284,14 @@ func (self *Logger) SetLevelByString(level string) {
 
 }
 
+func (self *Logger) SetLevel(lv Level) {
+	self.level = lv
+}
+
+func (self *Logger) Level() Level {
+	return self.level
+}
+
 func (self *Logger) SetPanicLevelByString(level string) {
 	self.panicLevel = str2loglevel(level)
 
