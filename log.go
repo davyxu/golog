@@ -229,8 +229,13 @@ func (self *Logger) DebugColorf(colorName string, format string, v ...interface{
 
 }
 
-func (self *Logger) DebugColorln(c Color, v ...interface{}) {
-	self.log(c, Level_Debug, "", v...)
+func (self *Logger) DebugColorln(colorName string, v ...interface{}) {
+
+	if c, ok := colorByName[colorName]; ok {
+		self.log(c, Level_Debug, "", v...)
+	} else {
+		self.log(Color_White, Level_Debug, "", v...)
+	}
 }
 
 func (self *Logger) Debugf(format string, v ...interface{}) {
