@@ -155,7 +155,7 @@ func (self *Logger) Output(calldepth int, prefix string, text string, c Color, o
 	}
 	self.buf = self.buf[:0]
 
-	colorLog := self.colorFile != nil && c != Color_None
+	colorLog := c != Color_None
 
 	if colorLog {
 		self.buf = append(self.buf, logColorPrefix[c]...)
@@ -196,19 +196,18 @@ func (self *Logger) log(c Color, level Level, format string, v ...interface{}) {
 
 	var out io.Writer
 
-	if self.fileOutput == nil {
-
-		if level >= Level_Error {
-			out = os.Stderr
-		} else {
-			out = os.Stdout
-		}
-	} else {
-		out = self.fileOutput
-	}
-
 	if self.colorFile != nil && c == Color_None {
 		c = self.colorFile.ColorFromText(text)
+	}
+
+	if level >= Level_Error {
+		c = Color_Red
+	}
+
+	if self.fileOutput == nil {
+		out = os.Stdout
+	} else {
+		out = self.fileOutput
 	}
 
 	self.Output(3, prefix, text, c, out)
