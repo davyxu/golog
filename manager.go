@@ -83,6 +83,14 @@ func SetColorFile(loggerName string, colorFileName string) {
 	})
 }
 
+func EnableColorLogger(loggerName string, enable bool) {
+
+	VisitLogger(loggerName, func(l *Logger) bool {
+		l.enableColor = enable
+		return true
+	})
+}
+
 func SetOutputLogger(loggerName string, filename string) {
 
 	mode := os.O_RDWR | os.O_CREATE | os.O_APPEND

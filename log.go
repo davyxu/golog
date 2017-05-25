@@ -41,13 +41,14 @@ const (
 // the Writer's Write method.  A Logger can be used simultaneously from
 // multiple goroutines; it guarantees to serialize access to the Writer.
 type Logger struct {
-	mu         sync.Mutex // ensures atomic writes; protects the following fields
-	flag       int        // properties
-	buf        []byte     // for accumulating text to write
-	level      Level
-	panicLevel Level
-	name       string
-	colorFile  *ColorFile
+	mu          sync.Mutex // ensures atomic writes; protects the following fields
+	flag        int        // properties
+	buf         []byte     // for accumulating text to write
+	level       Level
+	panicLevel  Level
+	enableColor bool
+	name        string
+	colorFile   *ColorFile
 
 	fileOutput *os.File
 }
@@ -196,12 +197,17 @@ func (self *Logger) log(c Color, level Level, format string, v ...interface{}) {
 
 	var out io.Writer
 
-	if self.colorFile != nil && c == Color_None {
-		c = self.colorFile.ColorFromText(text)
-	}
+	if self.enableColor {
 
-	if level >= Level_Error {
-		c = Color_Red
+		if self.colorFile != nil && c == Color_None {
+			c = self.colorFile.ColorFromText(text)
+		}
+
+		if level >= Level_Error {
+			c = Color_Red
+		}
+	} else {
+		c = Color_None
 	}
 
 	if self.fileOutput == nil {
