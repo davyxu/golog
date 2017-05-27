@@ -290,7 +290,7 @@ func (self *Logger) Fatalln(v ...interface{}) {
 
 func (self *Logger) SetLevelByString(level string) {
 
-	self.level = str2loglevel(level)
+	self.SetLevel(str2loglevel(level))
 
 }
 
