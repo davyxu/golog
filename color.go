@@ -59,7 +59,7 @@ func matchColor(name string) Color {
 	return Color_None
 }
 
-func colorFromLevel(l Level) Color {
+func ColorFromLevel(l Level) Color {
 	switch l {
 	case Level_Warn:
 		return Color_Yellow
