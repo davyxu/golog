@@ -1,10 +1,17 @@
 package golog
 
-import "os"
+import (
+	"errors"
+	"os"
+)
 
 var logMap = make(map[string]*Logger)
 
 func add(l *Logger) {
+
+	if _, ok := logMap[l.name]; ok {
+		panic("duplicate logger name:" + l.name)
+	}
 
 	logMap[l.name] = l
 }
@@ -27,7 +34,9 @@ func str2loglevel(level string) Level {
 	return Level_Debug
 }
 
-func VisitLogger(name string, callback func(*Logger) bool) {
+var ErrLoggerNotFound = errors.New("logger not found")
+
+func VisitLogger(name string, callback func(*Logger) bool) error {
 
 	if name == "*" {
 
@@ -40,67 +49,68 @@ func VisitLogger(name string, callback func(*Logger) bool) {
 	} else {
 		l, ok := logMap[name]
 		if !ok {
-			return
+			return ErrLoggerNotFound
 		}
 
 		if callback(l) {
-			return
+			return nil
 		}
 
 	}
+
+	return nil
 }
 
 // 通过字符串设置某一类日志的级别
-func SetLevelByString(loggerName string, level string) {
+func SetLevelByString(loggerName string, level string) error {
 
-	VisitLogger(loggerName, func(l *Logger) bool {
+	return VisitLogger(loggerName, func(l *Logger) bool {
 		l.SetLevelByString(level)
 		return true
 	})
-
 }
 
 // 通过字符串设置某一类日志的崩溃级别
-func SetPanicLevelByString(loggerName string, level string) {
+func SetPanicLevelByString(loggerName string, level string) error {
 
-	VisitLogger(loggerName, func(l *Logger) bool {
+	return VisitLogger(loggerName, func(l *Logger) bool {
 		l.SetPanicLevelByString(level)
 		return true
 	})
 }
 
-func SetColorFile(loggerName string, colorFileName string) {
+func SetColorFile(loggerName string, colorFileName string) error {
 
 	cf := NewColorFile()
 
 	if err := cf.Load(colorFileName); err != nil {
-		panic(err)
+		return err
 	}
 
-	VisitLogger(loggerName, func(l *Logger) bool {
+	return VisitLogger(loggerName, func(l *Logger) bool {
 		l.SetColorFile(cf)
 		return true
 	})
 }
 
-func EnableColorLogger(loggerName string, enable bool) {
+func EnableColorLogger(loggerName string, enable bool) error {
 
-	VisitLogger(loggerName, func(l *Logger) bool {
+	return VisitLogger(loggerName, func(l *Logger) bool {
 		l.enableColor = enable
 		return true
 	})
 }
 
-func SetOutputLogger(loggerName string, filename string) {
+func SetOutputLogger(loggerName string, filename string) error {
 
 	mode := os.O_RDWR | os.O_CREATE | os.O_APPEND
 
 	f, err := os.OpenFile(filename, mode, 0666)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
-	VisitLogger(loggerName, func(l *Logger) bool {
+	return VisitLogger(loggerName, func(l *Logger) bool {
 		l.fileOutput = f
 		return true
 	})
