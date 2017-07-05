@@ -3,17 +3,25 @@ package golog
 import (
 	"errors"
 	"os"
+	"sync"
 )
 
-var logMap = make(map[string]*Logger)
+var (
+	logMap      = map[string]*Logger{}
+	logMapGuard sync.RWMutex
+)
 
 func add(l *Logger) {
+
+	logMapGuard.Lock()
 
 	if _, ok := logMap[l.name]; ok {
 		panic("duplicate logger name:" + l.name)
 	}
 
 	logMap[l.name] = l
+
+	logMapGuard.Unlock()
 }
 
 func str2loglevel(level string) Level {
@@ -37,6 +45,10 @@ func str2loglevel(level string) Level {
 var ErrLoggerNotFound = errors.New("logger not found")
 
 func VisitLogger(name string, callback func(*Logger) bool) error {
+
+	logMapGuard.RLock()
+
+	defer logMapGuard.RUnlock()
 
 	if name == "*" {
 
@@ -114,4 +126,11 @@ func SetOutputLogger(loggerName string, filename string) error {
 		l.fileOutput = f
 		return true
 	})
+}
+
+func ClearAll() {
+
+	logMapGuard.Lock()
+	logMap = map[string]*Logger{}
+	logMapGuard.Unlock()
 }
