@@ -2,6 +2,7 @@ package golog
 
 import (
 	"errors"
+	"io/ioutil"
 	"os"
 	"sync"
 )
@@ -93,9 +94,19 @@ func SetPanicLevelByString(loggerName string, level string) error {
 
 func SetColorFile(loggerName string, colorFileName string) error {
 
+	data, err := ioutil.ReadFile(colorFileName)
+	if err != nil {
+		return err
+	}
+
+	return SetColorDefine(loggerName, string(data))
+}
+
+func SetColorDefine(loggerName string, jsonFormat string) error {
+
 	cf := NewColorFile()
 
-	if err := cf.Load(colorFileName); err != nil {
+	if err := cf.Load(jsonFormat); err != nil {
 		return err
 	}
 

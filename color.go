@@ -3,7 +3,6 @@ package golog
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"strings"
 )
 
@@ -94,14 +93,9 @@ func (self *ColorFile) ColorFromText(text string) Color {
 	return Color_None
 }
 
-func (self *ColorFile) Load(filename string) error {
+func (self *ColorFile) Load(data string) error {
 
-	data, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(data, self)
+	err := json.Unmarshal([]byte(data), self)
 	if err != nil {
 		return err
 	}
