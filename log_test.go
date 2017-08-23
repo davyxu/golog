@@ -18,18 +18,17 @@ func TestLevel(t *testing.T) {
 }
 
 func TestMyLog(t *testing.T) {
-
 	logex := New("test2")
+	logex.colorFile = NewColorFile()
+	logex.colorFile.Load("color_sample.json")
+	logex.enableColor = true
 	logex.Debugln("hello1")
 	logex.DebugColorln("blue", "hello2")
 	logex.Debugln("hello3")
-
 }
 
 func TestSystemLog(t *testing.T) {
-
 	log.Println("hello1")
 	log.Println("hello2")
 	log.Println("hello3")
-
 }
