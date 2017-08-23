@@ -9,15 +9,15 @@ import (
 type Color int
 
 const (
-	Color_None Color = iota
-	Color_Black
-	Color_Red
-	Color_Green
-	Color_Yellow
-	Color_Blue
-	Color_Purple
-	Color_DarkGreen
-	Color_White
+	NoColor Color = iota
+	Black
+	Red
+	Green
+	Yellow
+	Blue
+	Purple
+	DarkGreen
+	White
 )
 
 var logColorPrefix = []string{
@@ -33,15 +33,15 @@ var logColorPrefix = []string{
 }
 
 var colorByName = map[string]Color{
-	"none":      Color_None,
-	"black":     Color_Black,
-	"red":       Color_Red,
-	"green":     Color_Green,
-	"yellow":    Color_Yellow,
-	"blue":      Color_Blue,
-	"purple":    Color_Purple,
-	"darkgreen": Color_DarkGreen,
-	"white":     Color_White,
+	"none":      NoColor,
+	"black":     Black,
+	"red":       Red,
+	"green":     Green,
+	"yellow":    Yellow,
+	"blue":      Blue,
+	"purple":    Purple,
+	"darkgreen": DarkGreen,
+	"white":     White,
 }
 
 func matchColor(name string) Color {
@@ -55,18 +55,18 @@ func matchColor(name string) Color {
 		}
 	}
 
-	return Color_None
+	return NoColor
 }
 
 func ColorFromLevel(l Level) Color {
 	switch l {
 	case Level_Warn:
-		return Color_Yellow
+		return Yellow
 	case Level_Error, Level_Fatal:
-		return Color_Red
+		return Red
 	}
 
-	return Color_None
+	return NoColor
 }
 
 var logColorSuffix = "\x1b[0m"
@@ -90,7 +90,7 @@ func (self *ColorFile) ColorFromText(text string) Color {
 		}
 	}
 
-	return Color_None
+	return NoColor
 }
 
 func (self *ColorFile) Load(data string) error {
@@ -104,7 +104,7 @@ func (self *ColorFile) Load(data string) error {
 
 		rule.c = matchColor(rule.Color)
 
-		if rule.c == Color_None {
+		if rule.c == NoColor {
 			return fmt.Errorf("color name not exists: %s", rule.Text)
 		}
 

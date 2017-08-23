@@ -156,7 +156,7 @@ func (self *Logger) Output(calldepth int, prefix string, text string, c Color, o
 	}
 	self.buf = self.buf[:0]
 
-	colorLog := c != Color_None
+	colorLog := c != NoColor
 
 	if colorLog {
 		self.buf = append(self.buf, logColorPrefix[c]...)
@@ -199,15 +199,15 @@ func (self *Logger) Log(c Color, level Level, format string, v ...interface{}) {
 
 	if self.enableColor {
 
-		if self.colorFile != nil && c == Color_None {
+		if self.colorFile != nil && c == NoColor {
 			c = self.colorFile.ColorFromText(text)
 		}
 
 		if level >= Level_Error {
-			c = Color_Red
+			c = Red
 		}
 	} else {
-		c = Color_None
+		c = NoColor
 	}
 
 	if self.fileOutput == nil {
@@ -229,7 +229,7 @@ func (self *Logger) DebugColorf(colorName string, format string, v ...interface{
 	if c, ok := colorByName[colorName]; ok {
 		self.Log(c, Level_Debug, format, v...)
 	} else {
-		self.Log(Color_White, Level_Debug, format, v...)
+		self.Log(White, Level_Debug, format, v...)
 	}
 
 }
@@ -239,7 +239,7 @@ func (self *Logger) DebugColorln(colorName string, v ...interface{}) {
 	if c, ok := colorByName[colorName]; ok {
 		self.Log(c, Level_Debug, "", v...)
 	} else {
-		self.Log(Color_White, Level_Debug, "", v...)
+		self.Log(White, Level_Debug, "", v...)
 	}
 }
 
@@ -307,6 +307,7 @@ func (self *Logger) SetPanicLevelByString(level string) {
 
 }
 
+// 注意, 加色只能在Gogland的main方式启用, Test方式无法加色
 func (self *Logger) SetColorFile(file *ColorFile) {
 	self.colorFile = file
 }
