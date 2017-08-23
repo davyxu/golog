@@ -6,21 +6,20 @@ import (
 )
 
 func TestLevel(t *testing.T) {
-
 	logex := New("test")
-	logex.Debugf("%d %s %v", 1, "hello")
-
+	logex.colorFile = NewColorFile()
+	logex.colorFile.Load("color_sample.json")
+	logex.enableColor = true
+	logex.Debugf("%d %s %v", 1, "hello", "world")
 	logex.Errorln("hello1")
-
 	logex.Errorln("2")
-
 	logex.Infoln("no")
 
 }
 
 func TestMyLog(t *testing.T) {
 
-	logex := New("test")
+	logex := New("test2")
 	logex.Debugln("hello1")
 	logex.DebugColorln("blue", "hello2")
 	logex.Debugln("hello3")
