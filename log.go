@@ -66,6 +66,14 @@ func New(name string) *Logger {
 	return l
 }
 
+func (self *Logger) SetFlag(v int) {
+	self.flag = v
+}
+
+func (self *Logger) Flag() int {
+	return self.flag
+}
+
 // Cheap integer to fixed-width decimal ASCII.  Give a negative width to avoid zero-padding.
 // Knows the buffer has capacity.
 func itoa(buf *[]byte, i int, wid int) {
