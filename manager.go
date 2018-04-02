@@ -1,28 +1,28 @@
 package golog
 
 import (
-	"errors"
 	"io/ioutil"
 	"os"
+	"regexp"
 	"sync"
 )
 
 var (
-	logMap      = map[string]*Logger{}
-	logMapGuard sync.RWMutex
+	loggerByName      = map[string]*Logger{}
+	loggerByNameGuard sync.RWMutex
 )
 
 func add(l *Logger) {
 
-	logMapGuard.Lock()
+	loggerByNameGuard.Lock()
 
-	if _, ok := logMap[l.name]; ok {
+	if _, ok := loggerByName[l.name]; ok {
 		panic("duplicate logger name:" + l.name)
 	}
 
-	logMap[l.name] = l
+	loggerByName[l.name] = l
 
-	logMapGuard.Unlock()
+	loggerByNameGuard.Unlock()
 }
 
 func str2loglevel(level string) Level {
@@ -34,7 +34,7 @@ func str2loglevel(level string) Level {
 		return Level_Info
 	case "warn":
 		return Level_Warn
-	case "error":
+	case "error", "err":
 		return Level_Error
 	case "fatal":
 		return Level_Fatal
@@ -43,30 +43,24 @@ func str2loglevel(level string) Level {
 	return Level_Debug
 }
 
-var ErrLoggerNotFound = errors.New("logger not found")
+// 支持正则表达式查找logger， a|b|c指定多个日志, .表示所有日志
+func VisitLogger(names string, callback func(*Logger) bool) error {
 
-func VisitLogger(name string, callback func(*Logger) bool) error {
+	loggerByNameGuard.RLock()
 
-	logMapGuard.RLock()
+	defer loggerByNameGuard.RUnlock()
 
-	defer logMapGuard.RUnlock()
+	exp, err := regexp.Compile(names)
+	if err != nil {
+		return err
+	}
 
-	if name == "*" {
+	for _, l := range loggerByName {
 
-		for _, l := range logMap {
+		if exp.MatchString(l.Name()) {
 			if !callback(l) {
 				break
 			}
-		}
-
-	} else {
-		l, ok := logMap[name]
-		if !ok {
-			return ErrLoggerNotFound
-		}
-
-		if callback(l) {
-			return nil
 		}
 
 	}
@@ -141,7 +135,7 @@ func SetOutputLogger(loggerName string, filename string) error {
 
 func ClearAll() {
 
-	logMapGuard.Lock()
-	logMap = map[string]*Logger{}
-	logMapGuard.Unlock()
+	loggerByNameGuard.Lock()
+	loggerByName = map[string]*Logger{}
+	loggerByNameGuard.Unlock()
 }

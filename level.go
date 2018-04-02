@@ -11,9 +11,9 @@ const (
 )
 
 var levelString = [...]string{
-	"[DEBUG]",
+	"[DEBU]",
 	"[INFO]",
 	"[WARN]",
-	"[ERROR]",
-	"[FATAL]",
+	"[ERRO]",
+	"[FATL]",
 }
