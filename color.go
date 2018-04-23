@@ -1,8 +1,7 @@
 package golog
 
 import (
-	"encoding/json"
-	"fmt"
+	"io/ioutil"
 	"strings"
 )
 
@@ -71,48 +70,34 @@ func ColorFromLevel(l Level) Color {
 
 var logColorSuffix = "\x1b[0m"
 
-type ColorMatch struct {
-	Text  string
-	Color string
+func SetColorDefine(loggerName string, jsonFormat string) error {
 
-	c Color
-}
+	cf := NewColorFile()
 
-type ColorFile struct {
-	Rule []*ColorMatch
-}
-
-func (self *ColorFile) ColorFromText(text string) Color {
-
-	for _, rule := range self.Rule {
-		if strings.Contains(text, rule.Text) {
-			return rule.c
-		}
+	if err := cf.Load(jsonFormat); err != nil {
+		return err
 	}
 
-	return NoColor
+	return VisitLogger(loggerName, func(l *Logger) bool {
+		l.SetColorFile(cf)
+		return true
+	})
 }
 
-func (self *ColorFile) Load(data string) error {
+func EnableColorLogger(loggerName string, enable bool) error {
 
-	err := json.Unmarshal([]byte(data), self)
+	return VisitLogger(loggerName, func(l *Logger) bool {
+		l.enableColor = enable
+		return true
+	})
+}
+
+func SetColorFile(loggerName string, colorFileName string) error {
+
+	data, err := ioutil.ReadFile(colorFileName)
 	if err != nil {
 		return err
 	}
 
-	for _, rule := range self.Rule {
-
-		rule.c = matchColor(rule.Color)
-
-		if rule.c == NoColor {
-			return fmt.Errorf("color name not exists: %s", rule.Text)
-		}
-
-	}
-
-	return nil
-}
-
-func NewColorFile() *ColorFile {
-	return &ColorFile{}
+	return SetColorDefine(loggerName, string(data))
 }

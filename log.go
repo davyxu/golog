@@ -50,7 +50,7 @@ type Logger struct {
 	name        string
 	colorFile   *ColorFile
 
-	fileOutput *os.File
+	output io.Writer
 }
 
 // New creates a new Logger.   The out variable sets the
@@ -59,7 +59,13 @@ type Logger struct {
 // The flag argument defines the logging properties.
 
 func New(name string) *Logger {
-	l := &Logger{flag: LstdFlags, level: Level_Debug, name: name, panicLevel: Level_Fatal}
+	l := &Logger{
+		flag:       LstdFlags,
+		level:      Level_Debug,
+		name:       name,
+		panicLevel: Level_Fatal,
+		output:     os.Stdout,
+	}
 
 	add(l)
 
@@ -207,8 +213,6 @@ func (self *Logger) Log(c Color, level Level, format string, v ...interface{}) {
 		text = fmt.Sprintf(format, v...)
 	}
 
-	var out io.Writer
-
 	if self.enableColor {
 
 		if self.colorFile != nil && c == NoColor {
@@ -222,13 +226,7 @@ func (self *Logger) Log(c Color, level Level, format string, v ...interface{}) {
 		c = NoColor
 	}
 
-	if self.fileOutput == nil {
-		out = os.Stdout
-	} else {
-		out = self.fileOutput
-	}
-
-	self.Output(3, prefix, text, c, out)
+	self.Output(3, prefix, text, c, self.output)
 
 	if int(level) >= int(self.panicLevel) {
 		panic(text)
