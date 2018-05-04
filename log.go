@@ -128,7 +128,7 @@ func (self *Logger) Log(level Level, text string) {
 	}
 
 	// 回车
-	if len(text) > 0 && text[len(text)-1] != '\n' {
+	if (len(text) > 0 && text[len(text)-1] != '\n') || len(text) == 0 {
 		self.buf = append(self.buf, '\n')
 	}
 
