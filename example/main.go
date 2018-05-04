@@ -25,7 +25,7 @@ func main() {
 	log.SetColor("red")
 	log.Warnf("级别颜色高于手动设置 + 日志名字")
 
-	log.SetFlag(golog.LstdFlags)
+	log.SetFlag(golog.LstdFlags | golog.Lshortfile)
 	log.Debugf("[DB] DB日志是绿色的，从文件读取，按文字匹配的， 完整的日志样式")
 
 }

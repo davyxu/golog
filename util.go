@@ -66,7 +66,7 @@ func writeFilePart(flag LogFlag, buf *[]byte) {
 			// release lock while getting caller info - it'text expensive.
 
 			var ok bool
-			_, file, line, ok = runtime.Caller(4)
+			_, file, line, ok = runtime.Caller(3)
 			if !ok {
 				file = "???"
 				line = 0
