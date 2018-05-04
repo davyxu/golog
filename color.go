@@ -57,7 +57,7 @@ func matchColor(name string) Color {
 	return NoColor
 }
 
-func ColorFromLevel(l Level) Color {
+func colorFromLevel(l Level) Color {
 	switch l {
 	case Level_Warn:
 		return Yellow
