@@ -107,10 +107,13 @@ func (self *Logger) Log(level Level, text string) {
 		return
 	}
 
+	self.mu.Lock()
+	defer self.mu.Unlock()
+
 	self.buf = self.buf[:0]
 
 	// 文本内容
-	if self.color != NoColor {
+	if self.enableColor && self.color != NoColor {
 		self.buf = append(self.buf, logColorPrefix[self.color]...)
 	}
 
@@ -123,7 +126,7 @@ func (self *Logger) Log(level Level, text string) {
 	self.buf = append(self.buf, text...)
 
 	// 颜色后缀
-	if self.color != NoColor {
+	if self.enableColor && self.color != NoColor {
 		self.buf = append(self.buf, logColorSuffix...)
 	}
 
