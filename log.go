@@ -19,23 +19,27 @@ import (
 	"sync"
 )
 
+type PartFunc func(*Logger)
+
 // A Logger represents an active logging object that generates lines of
 // output to an io.Writer.  Each logging operation makes a single call to
 // the Writer's Write method.  A Logger can be used simultaneously from
 // multiple goroutines; it guarantees to serialize access to the Writer.
 type Logger struct {
 	mu          sync.Mutex // ensures atomic writes; protects the following fields
-	flag        LogFlag    // properties
 	buf         []byte     // for accumulating text to write
 	level       Level
-	panicLevel  Level
 	enableColor bool
 	name        string
 	colorFile   *ColorFile
 
+	parts []PartFunc
+
 	output io.Writer
 
-	color Color
+	currColor Color
+	currLevel Level
+	currText  string
 }
 
 // New creates a new Logger.   The out variable sets the
@@ -43,200 +47,146 @@ type Logger struct {
 // The prefix appears at the beginning of each generated log line.
 // The flag argument defines the logging properties.
 
+const lineBuffer = 32
+
 func New(name string) *Logger {
 	l := &Logger{
-		flag:       LstdFlags,
-		level:      Level_Debug,
-		name:       name,
-		panicLevel: Level_Fatal,
-		output:     os.Stdout,
+		level:  Level_Debug,
+		name:   name,
+		output: os.Stdout,
+		buf:    make([]byte, 0, lineBuffer),
 	}
+
+	l.SetParts(LogPart_Level, LogPart_Name, LogPart_Time)
 
 	add(l)
 
 	return l
 }
 
-func (self *Logger) SetFlag(v LogFlag) {
-	self.flag = v
+func (self *Logger) SetParts(f ...PartFunc) {
+
+	self.parts = []PartFunc{logPart_ColorBegin}
+	self.parts = append(self.parts, f...)
+	self.parts = append(self.parts, logPart_Text, logPart_ColorEnd, logPart_Line)
 }
 
-func (self *Logger) Flag() LogFlag {
-	return self.flag
+// 二次开发接口
+func (self *Logger) WriteRawString(s string) {
+	self.buf = append(self.buf, s...)
+}
+
+func (self *Logger) WriteRawByte(b byte) {
+	self.buf = append(self.buf, b)
 }
 
 func (self *Logger) Name() string {
 	return self.name
 }
 
-func (self *Logger) writeLevelAndName(level Level) {
-	if self.flag.Contains(Llevel) {
-		self.buf = append(self.buf, levelString[level]...)
-		self.buf = append(self.buf, ' ')
-	}
+func (self *Logger) selectColorByLevel() {
 
-	if self.flag.Contains(Lname) {
-		self.buf = append(self.buf, self.name...)
-		self.buf = append(self.buf, ' ')
+	if levelColor := colorFromLevel(self.currLevel); levelColor != NoColor {
+		self.currColor = levelColor
 	}
 
 }
 
-func (self *Logger) selectColorByLevel(level Level) {
+func (self *Logger) selectColorByText() {
 
-	if levelColor := colorFromLevel(level); levelColor != NoColor {
-		self.color = levelColor
+	if self.enableColor && self.colorFile != nil && self.currColor == NoColor {
+		self.currColor = self.colorFile.ColorFromText(self.currText)
 	}
-
-}
-
-func (self *Logger) selectColor(level Level, text string) {
-
-	if self.enableColor && self.colorFile != nil && self.color == NoColor {
-		self.color = self.colorFile.ColorFromText(text)
-	}
-
-	self.selectColorByLevel(level)
 
 	return
 }
 
-func (self *Logger) Log(level Level, text string) {
+func (self *Logger) Log() {
 
-	if level < self.level {
-		return
-	}
-
+	// 防止日志并发打印导致的文本错位
 	self.mu.Lock()
 	defer self.mu.Unlock()
 
+	if self.currLevel < self.level {
+		return
+	}
+
+	self.selectColorByText()
+	self.selectColorByLevel()
+
 	self.buf = self.buf[:0]
 
-	// 文本内容
-	if self.enableColor && self.color != NoColor {
-		self.buf = append(self.buf, logColorPrefix[self.color]...)
-	}
-
-	self.writeLevelAndName(level)
-
-	writeTimePart(self.flag, &self.buf)
-
-	writeFilePart(self.flag, &self.buf)
-
-	self.buf = append(self.buf, text...)
-
-	// 颜色后缀
-	if self.enableColor && self.color != NoColor {
-		self.buf = append(self.buf, logColorSuffix...)
-	}
-
-	// 回车
-	if (len(text) > 0 && text[len(text)-1] != '\n') || len(text) == 0 {
-		self.buf = append(self.buf, '\n')
+	for _, p := range self.parts {
+		p(self)
 	}
 
 	self.output.Write(self.buf)
 
-	if int(level) >= int(self.panicLevel) {
-		panic(text)
-	}
-
-	self.color = NoColor
-
+	self.currColor = NoColor
 }
 
 func (self *Logger) SetColor(name string) {
-	self.color = colorByName[name]
+	self.currColor = colorByName[name]
 }
 
 func (self *Logger) Debugf(format string, v ...interface{}) {
 
-	text := fmt.Sprintf(format, v...)
+	self.currLevel = Level_Debug
+	self.currText = fmt.Sprintf(format, v...)
 
-	self.selectColor(Level_Debug, text)
-
-	self.Log(Level_Debug, text)
-}
-
-func (self *Logger) Debugln(v ...interface{}) {
-
-	text := fmt.Sprint(v...)
-
-	self.selectColor(Level_Debug, text)
-
-	self.Log(Level_Debug, text)
+	self.Log()
 }
 
 func (self *Logger) Infof(format string, v ...interface{}) {
 
-	text := fmt.Sprintf(format, v...)
+	self.currLevel = Level_Info
+	self.currText = fmt.Sprintf(format, v...)
 
-	self.selectColor(Level_Info, text)
+	self.Log()
+}
 
-	self.Log(Level_Info, text)
+func (self *Logger) Warnf(format string, v ...interface{}) {
+	self.currLevel = Level_Warn
+	self.currText = fmt.Sprintf(format, v...)
+
+	self.Log()
+}
+
+func (self *Logger) Errorf(format string, v ...interface{}) {
+	self.currLevel = Level_Error
+	self.currText = fmt.Sprintf(format, v...)
+
+	self.Log()
+}
+
+func (self *Logger) Debugln(v ...interface{}) {
+
+	self.currLevel = Level_Debug
+	self.currText = fmt.Sprint(v...)
+
+	self.Log()
 }
 
 func (self *Logger) Infoln(v ...interface{}) {
 
-	text := fmt.Sprint(v...)
+	self.currLevel = Level_Info
+	self.currText = fmt.Sprint(v...)
 
-	self.selectColor(Level_Info, text)
-
-	self.Log(Level_Info, text)
-}
-
-func (self *Logger) Warnf(format string, v ...interface{}) {
-
-	text := fmt.Sprintf(format, v...)
-
-	self.selectColor(Level_Warn, text)
-
-	self.Log(Level_Warn, text)
+	self.Log()
 }
 
 func (self *Logger) Warnln(v ...interface{}) {
+	self.currLevel = Level_Warn
+	self.currText = fmt.Sprint(v...)
 
-	text := fmt.Sprint(v...)
-
-	self.selectColor(Level_Warn, text)
-
-	self.Log(Level_Warn, text)
-}
-
-func (self *Logger) Errorf(format string, v ...interface{}) {
-
-	text := fmt.Sprintf(format, v...)
-
-	self.selectColor(Level_Error, text)
-
-	self.Log(Level_Error, text)
+	self.Log()
 }
 
 func (self *Logger) Errorln(v ...interface{}) {
+	self.currLevel = Level_Error
+	self.currText = fmt.Sprint(v...)
 
-	text := fmt.Sprint(v...)
-
-	self.selectColor(Level_Error, text)
-
-	self.Log(Level_Error, text)
-}
-
-func (self *Logger) Fatalf(format string, v ...interface{}) {
-
-	text := fmt.Sprintf(format, v...)
-
-	self.selectColor(Level_Fatal, text)
-
-	self.Log(Level_Fatal, text)
-}
-
-func (self *Logger) Fatalln(v ...interface{}) {
-
-	text := fmt.Sprint(v...)
-
-	self.selectColor(Level_Fatal, text)
-
-	self.Log(Level_Fatal, text)
+	self.Log()
 }
 
 func (self *Logger) SetLevelByString(level string) {
@@ -251,11 +201,6 @@ func (self *Logger) SetLevel(lv Level) {
 
 func (self *Logger) Level() Level {
 	return self.level
-}
-
-func (self *Logger) SetPanicLevelByString(level string) {
-	self.panicLevel = str2loglevel(level)
-
 }
 
 // 注意, 加色只能在Gogland的main方式启用, Test方式无法加色

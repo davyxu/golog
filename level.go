@@ -7,7 +7,6 @@ const (
 	Level_Info
 	Level_Warn
 	Level_Error
-	Level_Fatal
 )
 
 var levelString = [...]string{
@@ -15,7 +14,6 @@ var levelString = [...]string{
 	"[INFO]",
 	"[WARN]",
 	"[ERRO]",
-	"[FATL]",
 }
 
 func str2loglevel(level string) Level {
@@ -29,8 +27,6 @@ func str2loglevel(level string) Level {
 		return Level_Warn
 	case "error", "err":
 		return Level_Error
-	case "fatal":
-		return Level_Fatal
 	}
 
 	return Level_Debug
@@ -41,15 +37,6 @@ func SetLevelByString(loggerName string, level string) error {
 
 	return VisitLogger(loggerName, func(l *Logger) bool {
 		l.SetLevelByString(level)
-		return true
-	})
-}
-
-// 通过字符串设置某一类日志的崩溃级别
-func SetPanicLevelByString(loggerName string, level string) error {
-
-	return VisitLogger(loggerName, func(l *Logger) bool {
-		l.SetPanicLevelByString(level)
 		return true
 	})
 }
