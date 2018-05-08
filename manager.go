@@ -14,11 +14,13 @@ func add(l *Logger) {
 
 	loggerByNameGuard.Lock()
 
-	if _, ok := loggerByName[l.name]; ok {
-		panic("duplicate logger name:" + l.name)
-	}
+	if l.name != "" {
+		if _, ok := loggerByName[l.name]; ok {
+			panic("duplicate logger name:" + l.name)
+		}
 
-	loggerByName[l.name] = l
+		loggerByName[l.name] = l
+	}
 
 	loggerByNameGuard.Unlock()
 }

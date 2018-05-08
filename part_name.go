@@ -8,6 +8,8 @@ func LogPart_Level(log *Logger) {
 
 func LogPart_Name(log *Logger) {
 
-	log.WriteRawString(log.name)
-	log.WriteRawByte(' ')
+	if log.name != "" {
+		log.WriteRawString(log.name)
+		log.WriteRawByte(' ')
+	}
 }

@@ -87,7 +87,7 @@ func SetColorDefine(loggerName string, jsonFormat string) error {
 func EnableColorLogger(loggerName string, enable bool) error {
 
 	return VisitLogger(loggerName, func(l *Logger) bool {
-		l.enableColor = enable
+		l.EnableColor(enable)
 		return true
 	})
 }

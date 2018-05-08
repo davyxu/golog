@@ -64,6 +64,10 @@ func New(name string) *Logger {
 	return l
 }
 
+func (self *Logger) EnableColor(v bool) {
+	self.enableColor = v
+}
+
 func (self *Logger) SetParts(f ...PartFunc) {
 
 	self.parts = []PartFunc{logPart_ColorBegin}
