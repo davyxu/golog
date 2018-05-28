@@ -105,11 +105,14 @@ func (self *Logger) selectColorByText() {
 	return
 }
 
-func (self *Logger) Log() {
+func (self *Logger) Log(level Level, text string) {
 
 	// 防止日志并发打印导致的文本错位
 	self.mu.Lock()
 	defer self.mu.Unlock()
+
+	self.currLevel = level
+	self.currText = text
 
 	if self.currLevel < self.level {
 		return
@@ -130,67 +133,48 @@ func (self *Logger) Log() {
 }
 
 func (self *Logger) SetColor(name string) {
+	self.mu.Lock()
 	self.currColor = colorByName[name]
+	self.mu.Unlock()
 }
 
 func (self *Logger) Debugf(format string, v ...interface{}) {
 
-	self.currLevel = Level_Debug
-	self.currText = fmt.Sprintf(format, v...)
-
-	self.Log()
+	self.Log(Level_Debug, fmt.Sprintf(format, v...))
 }
 
 func (self *Logger) Infof(format string, v ...interface{}) {
 
-	self.currLevel = Level_Info
-	self.currText = fmt.Sprintf(format, v...)
-
-	self.Log()
+	self.Log(Level_Info, fmt.Sprintf(format, v...))
 }
 
 func (self *Logger) Warnf(format string, v ...interface{}) {
-	self.currLevel = Level_Warn
-	self.currText = fmt.Sprintf(format, v...)
 
-	self.Log()
+	self.Log(Level_Warn, fmt.Sprintf(format, v...))
 }
 
 func (self *Logger) Errorf(format string, v ...interface{}) {
-	self.currLevel = Level_Error
-	self.currText = fmt.Sprintf(format, v...)
 
-	self.Log()
+	self.Log(Level_Error, fmt.Sprintf(format, v...))
 }
 
 func (self *Logger) Debugln(v ...interface{}) {
 
-	self.currLevel = Level_Debug
-	self.currText = fmt.Sprint(v...)
-
-	self.Log()
+	self.Log(Level_Debug, fmt.Sprint(v...))
 }
 
 func (self *Logger) Infoln(v ...interface{}) {
 
-	self.currLevel = Level_Info
-	self.currText = fmt.Sprint(v...)
-
-	self.Log()
+	self.Log(Level_Info, fmt.Sprint(v...))
 }
 
 func (self *Logger) Warnln(v ...interface{}) {
-	self.currLevel = Level_Warn
-	self.currText = fmt.Sprint(v...)
 
-	self.Log()
+	self.Log(Level_Warn, fmt.Sprint(v...))
 }
 
 func (self *Logger) Errorln(v ...interface{}) {
-	self.currLevel = Level_Error
-	self.currText = fmt.Sprint(v...)
-
-	self.Log()
+	self.Log(Level_Error, fmt.Sprint(v...))
 }
 
 func (self *Logger) SetLevelByString(level string) {
