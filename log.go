@@ -160,21 +160,21 @@ func (self *Logger) Errorf(format string, v ...interface{}) {
 
 func (self *Logger) Debugln(v ...interface{}) {
 
-	self.Log(Level_Debug, fmt.Sprint(v...))
+	self.Log(Level_Debug, fmt.Sprintln(v...))
 }
 
 func (self *Logger) Infoln(v ...interface{}) {
 
-	self.Log(Level_Info, fmt.Sprint(v...))
+	self.Log(Level_Info, fmt.Sprintln(v...))
 }
 
 func (self *Logger) Warnln(v ...interface{}) {
 
-	self.Log(Level_Warn, fmt.Sprint(v...))
+	self.Log(Level_Warn, fmt.Sprintln(v...))
 }
 
 func (self *Logger) Errorln(v ...interface{}) {
-	self.Log(Level_Error, fmt.Sprint(v...))
+	self.Log(Level_Error, fmt.Sprintln(v...))
 }
 
 func (self *Logger) SetLevelByString(level string) {
