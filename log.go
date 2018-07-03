@@ -64,6 +64,10 @@ func New(name string) *Logger {
 	return l
 }
 
+func (self *Logger) SetOuptut(writer io.Writer) {
+	self.output = writer
+}
+
 func (self *Logger) EnableColor(v bool) {
 	self.enableColor = v
 }
@@ -132,10 +136,12 @@ func (self *Logger) Log(level Level, text string) {
 	self.currColor = NoColor
 }
 
-func (self *Logger) SetColor(name string) {
+func (self *Logger) SetColor(name string) *Logger {
 	self.mu.Lock()
-	self.currColor = colorByName[name]
+	self.currColor = matchColor(name)
 	self.mu.Unlock()
+
+	return self
 }
 
 func (self *Logger) Debugf(format string, v ...interface{}) {

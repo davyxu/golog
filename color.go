@@ -31,26 +31,31 @@ var logColorPrefix = []string{
 	"\x1b[037m",
 }
 
-var colorByName = map[string]Color{
-	"none":      NoColor,
-	"black":     Black,
-	"red":       Red,
-	"green":     Green,
-	"yellow":    Yellow,
-	"blue":      Blue,
-	"purple":    Purple,
-	"darkgreen": DarkGreen,
-	"white":     White,
+type colorData struct {
+	name string
+	c    Color
+}
+
+var colorByName = []colorData{
+	{"none", NoColor},
+	{"black", Black},
+	{"red", Red},
+	{"green", Green},
+	{"yellow", Yellow},
+	{"blue", Blue},
+	{"purple", Purple},
+	{"darkgreen", DarkGreen},
+	{"white", White},
 }
 
 func matchColor(name string) Color {
 
 	lower := strings.ToLower(name)
 
-	for cname, c := range colorByName {
+	for _, d := range colorByName {
 
-		if cname == lower {
-			return c
+		if d.name == lower {
+			return d.c
 		}
 	}
 
