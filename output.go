@@ -16,7 +16,7 @@ func SetOutputToFile(loggerName string, filename string) error {
 	}
 
 	return VisitLogger(loggerName, func(l *Logger) bool {
-		l.SetOuptut(fileHandle)
+		l.SetOutptut(fileHandle)
 		return true
 	})
 }
@@ -24,7 +24,7 @@ func SetOutputToFile(loggerName string, filename string) error {
 // 输出到自定义接口
 func SetOutput(loggerName string, output io.Writer) error {
 	return VisitLogger(loggerName, func(l *Logger) bool {
-		l.SetOuptut(output)
+		l.SetOutptut(output)
 		return true
 	})
 }

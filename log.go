@@ -37,9 +37,10 @@ type Logger struct {
 
 	output io.Writer
 
-	currColor Color
-	currLevel Level
-	currText  string
+	currColor     Color
+	currLevel     Level
+	currText      string
+	currCondition bool
 }
 
 // New creates a new Logger.   The out variable sets the
@@ -51,10 +52,11 @@ const lineBuffer = 32
 
 func New(name string) *Logger {
 	l := &Logger{
-		level:  Level_Debug,
-		name:   name,
-		output: os.Stdout,
-		buf:    make([]byte, 0, lineBuffer),
+		level:         Level_Debug,
+		name:          name,
+		output:        os.Stdout,
+		buf:           make([]byte, 0, lineBuffer),
+		currCondition: true,
 	}
 
 	l.SetParts(LogPart_Level, LogPart_Name, LogPart_Time)
@@ -64,7 +66,7 @@ func New(name string) *Logger {
 	return l
 }
 
-func (self *Logger) SetOuptut(writer io.Writer) {
+func (self *Logger) SetOutptut(writer io.Writer) {
 	self.output = writer
 }
 
@@ -118,7 +120,9 @@ func (self *Logger) Log(level Level, text string) {
 	self.currLevel = level
 	self.currText = text
 
-	if self.currLevel < self.level {
+	defer self.resetState()
+
+	if self.currLevel < self.level || !self.currCondition {
 		return
 	}
 
@@ -132,8 +136,20 @@ func (self *Logger) Log(level Level, text string) {
 	}
 
 	self.output.Write(self.buf)
+}
 
+func (self *Logger) Condition(value bool) *Logger {
+
+	self.mu.Lock()
+	self.currCondition = value
+	self.mu.Unlock()
+
+	return self
+}
+
+func (self *Logger) resetState() {
 	self.currColor = NoColor
+	self.currCondition = true
 }
 
 func (self *Logger) SetColor(name string) *Logger {
