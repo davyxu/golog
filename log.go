@@ -70,6 +70,10 @@ func (self *Logger) SetOutptut(writer io.Writer) {
 	self.output = writer
 }
 
+func (self *Logger) GetOutput() io.Writer {
+	return self.output
+}
+
 func (self *Logger) EnableColor(v bool) {
 	self.enableColor = v
 }
@@ -109,6 +113,10 @@ func (self *Logger) selectColorByText() {
 	}
 
 	return
+}
+
+func (self *Logger) Buff() []byte {
+	return self.buf
 }
 
 func (self *Logger) Log(level Level, text string) {
