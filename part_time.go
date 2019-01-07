@@ -34,7 +34,7 @@ func writeTimePart(log *Logger, ms bool) {
 
 	if ms {
 		log.WriteRawByte('.')
-		itoa(log, now.Nanosecond()/1e3, 6)
+		itoa(log, now.Nanosecond()/1e6, 3)
 	}
 
 	log.WriteRawByte(' ')
