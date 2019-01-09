@@ -75,7 +75,9 @@ func (self *Logger) GetOutput() io.Writer {
 }
 
 func (self *Logger) EnableColor(v bool) {
+	self.mu.Lock()
 	self.enableColor = v
+	self.mu.Unlock()
 }
 
 func (self *Logger) SetParts(f ...PartFunc) {
