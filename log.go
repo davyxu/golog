@@ -41,6 +41,9 @@ type Logger struct {
 	currLevel     Level
 	currText      string
 	currCondition bool
+
+	writeBuff chan []byte
+	writePool *sync.Pool
 }
 
 // New creates a new Logger.   The out variable sets the
@@ -145,7 +148,71 @@ func (self *Logger) Log(level Level, text string) {
 		p(self)
 	}
 
-	self.output.Write(self.buf)
+	if self.writeBuff != nil {
+		self.delayWrite(self.buf)
+	} else {
+		self.output.Write(self.buf)
+	}
+}
+
+func (self *Logger) delayWrite(b []byte) {
+
+	var newb []byte
+
+	// 超大
+	if len(b) >= maxTextBytes {
+		newb = make([]byte, len(b))
+	} else {
+		newb = self.writePool.Get().([]byte)[:len(b)]
+	}
+
+	copy(newb, b)
+	self.writeBuff <- newb
+
+}
+
+const (
+
+	// 缓冲队列长度
+	asyncBufferSize = 100
+
+	// 开启内存池范围的写入大小
+	maxTextBytes = 1024
+)
+
+// 开启异步写入模式
+func (self *Logger) EnableASyncWrite() {
+
+	if self.writeBuff != nil {
+		return
+	}
+
+	self.writeBuff = make(chan []byte, asyncBufferSize)
+	self.writePool = new(sync.Pool)
+
+	// 拷贝数据的池
+	self.writePool.New = func() interface{} {
+		return make([]byte, maxTextBytes)
+	}
+
+	go func() {
+
+		for {
+
+			// 从队列中获取一个要写入的日志
+			b := <-self.writeBuff
+
+			// 写入目标
+			self.output.Write(b)
+
+			// 必须是由pool分配的，才能用池释放
+			if cap(b) < maxTextBytes {
+				self.writePool.Put(b)
+			}
+
+		}
+
+	}()
 }
 
 func (self *Logger) Condition(value bool) *Logger {
