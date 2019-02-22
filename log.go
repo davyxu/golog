@@ -13,9 +13,7 @@
 package golog
 
 import (
-	"fmt"
 	"io"
-	"os"
 	"sync"
 )
 
@@ -41,9 +39,6 @@ type Logger struct {
 	currLevel     Level
 	currText      string
 	currCondition bool
-
-	writeBuff chan []byte
-	writePool *sync.Pool
 }
 
 // New creates a new Logger.   The out variable sets the
@@ -57,7 +52,6 @@ func New(name string) *Logger {
 	l := &Logger{
 		level:         Level_Debug,
 		name:          name,
-		output:        os.Stdout,
 		buf:           make([]byte, 0, lineBuffer),
 		currCondition: true,
 	}
@@ -67,14 +61,6 @@ func New(name string) *Logger {
 	add(l)
 
 	return l
-}
-
-func (self *Logger) SetOutptut(writer io.Writer) {
-	self.output = writer
-}
-
-func (self *Logger) GetOutput() io.Writer {
-	return self.output
 }
 
 func (self *Logger) EnableColor(v bool) {
@@ -103,28 +89,11 @@ func (self *Logger) Name() string {
 	return self.name
 }
 
-func (self *Logger) selectColorByLevel() {
-
-	if levelColor := colorFromLevel(self.currLevel); levelColor != NoColor {
-		self.currColor = levelColor
-	}
-
-}
-
-func (self *Logger) selectColorByText() {
-
-	if self.enableColor && self.colorFile != nil && self.currColor == NoColor {
-		self.currColor = self.colorFile.ColorFromText(self.currText)
-	}
-
-	return
-}
-
 func (self *Logger) Buff() []byte {
 	return self.buf
 }
 
-func (self *Logger) Log(level Level, text string) {
+func (self *Logger) LogText(level Level, text string) {
 
 	// 防止日志并发打印导致的文本错位
 	self.mu.Lock()
@@ -148,71 +117,12 @@ func (self *Logger) Log(level Level, text string) {
 		p(self)
 	}
 
-	if self.writeBuff != nil {
-		self.delayWrite(self.buf)
-	} else {
+	if self.output != nil {
 		self.output.Write(self.buf)
-	}
-}
-
-func (self *Logger) delayWrite(b []byte) {
-
-	var newb []byte
-
-	// 超大
-	if len(b) >= maxTextBytes {
-		newb = make([]byte, len(b))
 	} else {
-		newb = self.writePool.Get().([]byte)[:len(b)]
+		globalWrite(self.buf)
 	}
 
-	copy(newb, b)
-	self.writeBuff <- newb
-
-}
-
-const (
-
-	// 缓冲队列长度
-	asyncBufferSize = 100
-
-	// 开启内存池范围的写入大小
-	maxTextBytes = 1024
-)
-
-// 开启异步写入模式
-func (self *Logger) EnableASyncWrite() {
-
-	if self.writeBuff != nil {
-		return
-	}
-
-	self.writeBuff = make(chan []byte, asyncBufferSize)
-	self.writePool = new(sync.Pool)
-
-	// 拷贝数据的池
-	self.writePool.New = func() interface{} {
-		return make([]byte, maxTextBytes)
-	}
-
-	go func() {
-
-		for {
-
-			// 从队列中获取一个要写入的日志
-			b := <-self.writeBuff
-
-			// 写入目标
-			self.output.Write(b)
-
-			// 必须是由pool分配的，才能用池释放
-			if cap(b) < maxTextBytes {
-				self.writePool.Put(b)
-			}
-
-		}
-
-	}()
 }
 
 func (self *Logger) Condition(value bool) *Logger {
@@ -229,71 +139,6 @@ func (self *Logger) resetState() {
 	self.currCondition = true
 }
 
-func (self *Logger) SetColor(name string) *Logger {
-	self.mu.Lock()
-	self.currColor = matchColor(name)
-	self.mu.Unlock()
-
-	return self
-}
-
-func (self *Logger) Debugf(format string, v ...interface{}) {
-
-	self.Log(Level_Debug, fmt.Sprintf(format, v...))
-}
-
-func (self *Logger) Infof(format string, v ...interface{}) {
-
-	self.Log(Level_Info, fmt.Sprintf(format, v...))
-}
-
-func (self *Logger) Warnf(format string, v ...interface{}) {
-
-	self.Log(Level_Warn, fmt.Sprintf(format, v...))
-}
-
-func (self *Logger) Errorf(format string, v ...interface{}) {
-
-	self.Log(Level_Error, fmt.Sprintf(format, v...))
-}
-
-func (self *Logger) Debugln(v ...interface{}) {
-
-	self.Log(Level_Debug, fmt.Sprintln(v...))
-}
-
-func (self *Logger) Infoln(v ...interface{}) {
-
-	self.Log(Level_Info, fmt.Sprintln(v...))
-}
-
-func (self *Logger) Warnln(v ...interface{}) {
-
-	self.Log(Level_Warn, fmt.Sprintln(v...))
-}
-
-func (self *Logger) Errorln(v ...interface{}) {
-	self.Log(Level_Error, fmt.Sprintln(v...))
-}
-
-func (self *Logger) SetLevelByString(level string) {
-
-	self.SetLevel(str2loglevel(level))
-
-}
-
-func (self *Logger) SetLevel(lv Level) {
-	self.level = lv
-}
-
-func (self *Logger) Level() Level {
-	return self.level
-}
-
-// 注意, 加色只能在Gogland的main方式启用, Test方式无法加色
-func (self *Logger) SetColorFile(file *ColorFile) {
-	self.colorFile = file
-}
 func (self *Logger) IsDebugEnabled() bool {
 	return self.level == Level_Debug
 }

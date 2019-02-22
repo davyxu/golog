@@ -1,5 +1,7 @@
 package golog
 
+import "fmt"
+
 type Level int
 
 const (
@@ -39,4 +41,57 @@ func SetLevelByString(loggerName string, level string) error {
 		l.SetLevelByString(level)
 		return true
 	})
+}
+
+func (self *Logger) Debugf(format string, v ...interface{}) {
+
+	self.LogText(Level_Debug, fmt.Sprintf(format, v...))
+}
+
+func (self *Logger) Infof(format string, v ...interface{}) {
+
+	self.LogText(Level_Info, fmt.Sprintf(format, v...))
+}
+
+func (self *Logger) Warnf(format string, v ...interface{}) {
+
+	self.LogText(Level_Warn, fmt.Sprintf(format, v...))
+}
+
+func (self *Logger) Errorf(format string, v ...interface{}) {
+
+	self.LogText(Level_Error, fmt.Sprintf(format, v...))
+}
+
+func (self *Logger) Debugln(v ...interface{}) {
+
+	self.LogText(Level_Debug, fmt.Sprintln(v...))
+}
+
+func (self *Logger) Infoln(v ...interface{}) {
+
+	self.LogText(Level_Info, fmt.Sprintln(v...))
+}
+
+func (self *Logger) Warnln(v ...interface{}) {
+
+	self.LogText(Level_Warn, fmt.Sprintln(v...))
+}
+
+func (self *Logger) Errorln(v ...interface{}) {
+	self.LogText(Level_Error, fmt.Sprintln(v...))
+}
+
+func (self *Logger) SetLevelByString(level string) {
+
+	self.SetLevel(str2loglevel(level))
+
+}
+
+func (self *Logger) SetLevel(lv Level) {
+	self.level = lv
+}
+
+func (self *Logger) Level() Level {
+	return self.level
 }
