@@ -1,6 +1,10 @@
 package golog
 
-import "sync"
+import (
+	"os"
+	"sync"
+	"time"
+)
 
 const (
 
@@ -12,14 +16,14 @@ const (
 )
 
 var (
-	asyncWriteBuff   chan []byte
+	asyncWriteBuff   chan interface{}
 	asyncContextPool *sync.Pool
 )
 
 // 开启异步写入模式
 func EnableASyncWrite() {
 
-	asyncWriteBuff = make(chan []byte, asyncBufferSize)
+	asyncWriteBuff = make(chan interface{}, asyncBufferSize)
 	asyncContextPool = new(sync.Pool)
 
 	// 拷贝数据的池
@@ -32,19 +36,49 @@ func EnableASyncWrite() {
 		for {
 
 			// 从队列中获取一个要写入的日志
-			b := <-asyncWriteBuff
+			raw := <-asyncWriteBuff
 
-			// 写入目标
-			globalWriter.Write(b)
+			switch d := raw.(type) {
+			case func():
+				d()
+			case []byte:
+				// 写入目标
+				globalWriter.Write(d)
 
-			// 必须是由pool分配的，才能用池释放
-			if cap(b) < maxTextBytes {
-				asyncContextPool.Put(b)
+				// 必须是由pool分配的，才能用池释放
+				if cap(d) < maxTextBytes {
+					asyncContextPool.Put(d)
+				}
 			}
 
 		}
 
 	}()
+}
+
+// 等待异步写入全部完成
+func FlushASyncWrite(timeout time.Duration) {
+
+	if asyncWriteBuff == nil {
+		return
+	}
+
+	ch := make(chan struct{})
+
+	asyncWriteBuff <- func() {
+
+		// 确保文件已经写入
+		if f, ok := globalWriter.(*os.File); ok {
+			f.Sync()
+		}
+
+		ch <- struct{}{}
+	}
+
+	select {
+	case <-ch:
+	case <-time.After(timeout):
+	}
 }
 
 func queuedWrite(b []byte) {
