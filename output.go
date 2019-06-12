@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strconv"
 )
 
@@ -44,6 +45,14 @@ func GetOutputFileOption() OutputFileOption {
 func SetOutputToFile(filename string, optList ...interface{}) error {
 
 	globalOutputFileName = filename
+
+	// 自动创建日志目录
+	logDir := filepath.Dir(globalOutputFileName)
+
+	_, err := os.Stat(logDir)
+	if err != nil && os.IsNotExist(err) {
+		os.MkdirAll(logDir, 0777)
+	}
 
 	for _, opt := range optList {
 		switch v := opt.(type) {
