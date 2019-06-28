@@ -95,3 +95,7 @@ func (self *Logger) SetLevel(lv Level) {
 func (self *Logger) Level() Level {
 	return self.level
 }
+
+func (self *Logger) LevelString() string {
+	return levelString[self.level]
+}

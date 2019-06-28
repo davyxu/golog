@@ -14,6 +14,8 @@ package golog
 
 import (
 	"io"
+	"runtime"
+	"strings"
 	"sync"
 )
 
@@ -29,6 +31,8 @@ type Logger struct {
 	level       Level
 	enableColor bool
 	name        string
+	pkgName     string
+	userData    interface{}
 	colorFile   *ColorFile
 
 	parts []PartFunc
@@ -48,10 +52,17 @@ type Logger struct {
 
 const lineBuffer = 32
 
+func getPackageName() string {
+	pc, _, _, _ := runtime.Caller(2)
+	raw := runtime.FuncForPC(pc).Name()
+	return strings.TrimSuffix(raw, ".init.ializers")
+}
 func New(name string) *Logger {
+
 	l := &Logger{
 		level:         Level_Debug,
 		name:          name,
+		pkgName:       getPackageName(),
 		buf:           make([]byte, 0, lineBuffer),
 		currCondition: true,
 	}
@@ -76,6 +87,11 @@ func (self *Logger) SetParts(f ...PartFunc) {
 	self.parts = append(self.parts, logPart_Text, logPart_ColorEnd, logPart_Line)
 }
 
+func (self *Logger) SetFullParts(f ...PartFunc) {
+
+	self.parts = f
+}
+
 // 二次开发接口
 func (self *Logger) WriteRawString(s string) {
 	self.buf = append(self.buf, s...)
@@ -85,12 +101,33 @@ func (self *Logger) WriteRawByte(b byte) {
 	self.buf = append(self.buf, b)
 }
 
+func (self *Logger) WriteRawByteSlice(b []byte) {
+	self.buf = append(self.buf, b...)
+}
+
 func (self *Logger) Name() string {
 	return self.name
 }
 
+func (self *Logger) SetUserData(data interface{}) {
+	self.userData = data
+}
+
+func (self *Logger) UserData() interface{} {
+	return self.userData
+}
+
+func (self *Logger) PkgName() string {
+	return self.pkgName
+}
+
 func (self *Logger) Buff() []byte {
 	return self.buf
+}
+
+// 仅供LogPart访问
+func (self *Logger) Text() string {
+	return self.currText
 }
 
 func (self *Logger) LogText(level Level, text string) {

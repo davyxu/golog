@@ -1,7 +1,7 @@
 package golog
 
 func LogPart_Level(log *Logger) {
-	log.WriteRawString(levelString[log.currLevel])
+	log.WriteRawString(log.LevelString())
 	log.WriteRawByte(' ')
 
 }
