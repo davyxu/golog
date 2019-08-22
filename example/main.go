@@ -44,16 +44,16 @@ func main() {
 	golog.EnableColorLogger(".", true)
 	log.Debugln("关闭所有部分样式")
 
-	log.SetParts(golog.LogPart_Level)
+	log.SetParts(golog.LogPart_CurrLevel)
 	log.SetColor("blue")
 	log.Debugln("蓝色的字+级别")
 
-	log.SetParts(golog.LogPart_Level, golog.LogPart_Name)
+	log.SetParts(golog.LogPart_CurrLevel, golog.LogPart_Name)
 	// 颜色只会影响一行
 	log.SetColor("red")
 	log.Warnf("级别颜色高于手动设置 + 日志名字")
 
-	log.SetParts(golog.LogPart_Level, golog.LogPart_Name, golog.LogPart_Time, golog.LogPart_ShortFileName)
+	log.SetParts(golog.LogPart_CurrLevel, golog.LogPart_Name, golog.LogPart_Time, golog.LogPart_ShortFileName)
 	log.Debugln()
 	log.Debugf("[DB] DB日志是绿色的，从文件读取，按文字匹配的， 完整的日志样式")
 

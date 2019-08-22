@@ -96,6 +96,6 @@ func (self *Logger) Level() Level {
 	return self.level
 }
 
-func (self *Logger) LevelString() string {
-	return levelString[self.level]
+func (self *Logger) CurrLevelString() string {
+	return levelString[self.currLevel]
 }

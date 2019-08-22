@@ -67,7 +67,7 @@ func New(name string) *Logger {
 		currCondition: true,
 	}
 
-	l.SetParts(LogPart_Level, LogPart_Name, LogPart_Time)
+	l.SetParts(LogPart_CurrLevel, LogPart_Name, LogPart_Time)
 
 	add(l)
 
