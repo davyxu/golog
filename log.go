@@ -43,6 +43,7 @@ type Logger struct {
 	currLevel     Level
 	currText      string
 	currCondition bool
+	currContext   interface{}
 }
 
 // New creates a new Logger.   The out variable sets the
@@ -130,7 +131,12 @@ func (self *Logger) Text() string {
 	return self.currText
 }
 
-func (self *Logger) LogText(level Level, text string) {
+// 仅供LogPart访问
+func (self *Logger) Context() interface{} {
+	return self.currContext
+}
+
+func (self *Logger) LogText(level Level, text string, ctx interface{}) {
 
 	// 防止日志并发打印导致的文本错位
 	self.mu.Lock()
@@ -138,6 +144,7 @@ func (self *Logger) LogText(level Level, text string) {
 
 	self.currLevel = level
 	self.currText = text
+	self.currContext = ctx
 
 	defer self.resetState()
 
@@ -174,6 +181,7 @@ func (self *Logger) Condition(value bool) *Logger {
 func (self *Logger) resetState() {
 	self.currColor = NoColor
 	self.currCondition = true
+	self.currContext = nil
 }
 
 func (self *Logger) IsDebugEnabled() bool {

@@ -45,41 +45,41 @@ func SetLevelByString(loggerName string, level string) error {
 
 func (self *Logger) Debugf(format string, v ...interface{}) {
 
-	self.LogText(Level_Debug, fmt.Sprintf(format, v...))
+	self.LogText(Level_Debug, fmt.Sprintf(format, v...), nil)
 }
 
 func (self *Logger) Infof(format string, v ...interface{}) {
 
-	self.LogText(Level_Info, fmt.Sprintf(format, v...))
+	self.LogText(Level_Info, fmt.Sprintf(format, v...), nil)
 }
 
 func (self *Logger) Warnf(format string, v ...interface{}) {
 
-	self.LogText(Level_Warn, fmt.Sprintf(format, v...))
+	self.LogText(Level_Warn, fmt.Sprintf(format, v...), nil)
 }
 
 func (self *Logger) Errorf(format string, v ...interface{}) {
 
-	self.LogText(Level_Error, fmt.Sprintf(format, v...))
+	self.LogText(Level_Error, fmt.Sprintf(format, v...), nil)
 }
 
 func (self *Logger) Debugln(v ...interface{}) {
 
-	self.LogText(Level_Debug, fmt.Sprintln(v...))
+	self.LogText(Level_Debug, fmt.Sprintln(v...), nil)
 }
 
 func (self *Logger) Infoln(v ...interface{}) {
 
-	self.LogText(Level_Info, fmt.Sprintln(v...))
+	self.LogText(Level_Info, fmt.Sprintln(v...), nil)
 }
 
 func (self *Logger) Warnln(v ...interface{}) {
 
-	self.LogText(Level_Warn, fmt.Sprintln(v...))
+	self.LogText(Level_Warn, fmt.Sprintln(v...), nil)
 }
 
 func (self *Logger) Errorln(v ...interface{}) {
-	self.LogText(Level_Error, fmt.Sprintln(v...))
+	self.LogText(Level_Error, fmt.Sprintln(v...), nil)
 }
 
 func (self *Logger) SetLevelByString(level string) {
